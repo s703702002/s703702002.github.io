@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta name="apple-itunes-app" content="app-id=id927757129" />
+    <meta property="og:title" content="這裡填寫超吸引人的標題" />
+    <meta property="og:description" content="這裡填寫簡短的內容摘要，吸引朋友點擊。" />
+    <meta property="og:image" content="https://cdn.gogoro.com/resources/pages/home/banners/202403/img-home-jego-dx-global@2x.jpg?v=7" />
+    <meta property="og:url" content="https://www.gogoro.com/tw/" />
+    <meta property="og:type" content="website" />
+    <title>Gogoro!</title>
+  </head>
+  <body>
+    <script type="text/javascript">
+      var browser = {
+        versions: (function () {
+          var u = navigator.userAgent,
+            app = navigator.appVersion;
+          return {
+            mobile: !!u.match(/AppleWebKit.*Mobile.*/),
+            ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/),
+            android: u.indexOf("Android") > -1 || u.indexOf("Adr") > -1,
+          };
+        })(),
+        language: (
+          navigator.browserLanguage || navigator.language
+        ).toLowerCase(),
+      };
+      if (window.location.pathname.includes("service")) {
+        switch (true) {
+          case window.location.search.includes("dev"):
+            window.location.replace(
+              "https://dev-sc.gogoro.com" + window.location.search
+            );
+            break;
+          case window.location.search.includes("pa"):
+            window.location.replace(
+              "https://pa-reserve.gogoro.com" + window.location.search
+            );
+            break;
+          default:
+            window.location.replace(
+              "https://reserve.gogoro.com" + window.location.search
+            );
+            break;
+        }
+      } else if (browser.versions.mobile) {
+        window.location.replace(
+          browser.versions.ios
+            ? "https://apps.apple.com/tw/app/gogoro-app/id927757129"
+            : "https://play.google.com/store/apps/details?id=com.gogoro.smartclient&hl=" +
+                browser.language
+        );
+      } else {
+        window.location.replace("https://www.gogoro.com/tw/");
+      }
+    </script>
+  </body>
+</html>
