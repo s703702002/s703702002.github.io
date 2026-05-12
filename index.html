@@ -1,62 +1,48 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <meta name="apple-itunes-app" content="app-id=927757129" />
-    
-    <meta property="og:title" content="打開 Gogoro App" />
-    <meta property="og:description" content="點擊此處領取獎勵或查看資訊..." />
-    <meta property="og:image" content="https://cdn.gogoro.com/resources/pages/home/banners/202403/img-home-jego-dx-global@2x.jpg?v=7" />
-    <meta property="og:url" content="https://s703702002.github.io/" />
-    <meta property="og:type" content="website" />
-    
-    <title>正在開啟 Gogoro App...</title>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1>Bridge 探測器</h1>
+    <button onclick="detectBridges()" style="padding: 15px; font-size: 16px;">點我開始掃描</button>
+    <pre id="result"></pre>
 
-    <style>
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        margin: 0;
-        background-color: #f5f5f5;
-        text-align: center;
-      }
-      .btn {
-        background-color: #000;
-        color: white;
-        padding: 15px 30px;
-        border-radius: 50px;
-        text-decoration: none;
-        font-size: 18px;
-        font-weight: bold;
-        margin-top: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      }
-      p { color: #666; margin-bottom: 20px; }
-    </style>
-  </head>
-  <body>
-    
-    <h3>如果沒有自動開啟，請點擊下方按鈕</h3>
-    
-    <a id="appLink" href="https://app.gogoro.com" class="btn">開啟 Gogoro App</a>
+    <script>
+        function detectBridges() {
+            let output = {};
 
-    <script type="text/javascript">
-     window.onload = function() {
-          let bridgeNames = [];
-          if (window.webkit && window.webkit.messageHandlers) {
-              // 抓出所有注入的 handler 名稱
-              bridgeNames = Object.keys(window.webkit.messageHandlers);
-          }
+            // 1. 探測 iOS (WKWebView)
+            if (window.webkit && window.webkit.messageHandlers) {
+                output.iOS_Bridges = Object.keys(window.webkit.messageHandlers);
+            } else {
+                output.iOS_Bridges = "未偵測到 webkit 物件";
+            }
 
-          // 將結果顯示在網頁上
-          document.body.innerHTML = "<h1>找到的 Bridge:</h1><pre>" + JSON.stringify(bridgeNames, null, 2) + "</pre>";
-      };
+            // 2. 探測可能的 Android 或自訂全域變數
+            // 尋找 window 底下，不是標準瀏覽器 API 的自訂物件
+            let customGlobals = [];
+            for (let prop in window) {
+                try {
+                    // 過濾掉常見的網頁標準屬性，只留下看起來像 APP 注入的變數
+                    if (prop !== 'webkit' && prop !== 'document' && prop !== 'location' && 
+                        prop !== 'window' && prop.length > 2) {
+                        
+                        // 很多 APP 注入的物件在 typeof 判斷時會是 object 或 function
+                        if (typeof window[prop] === 'object' || typeof window[prop] === 'function') {
+                            // 這裡只簡單列出名稱，避免遞迴層級太深當機
+                            customGlobals.push(prop); 
+                        }
+                    }
+                } catch (e) {
+                    // 跨域或安全限制導致無法讀取的屬性就跳過
+                }
+            }
+            output.possible_Globals = customGlobals;
+
+            // 顯示結果
+            document.getElementById('result').innerHTML = JSON.stringify(output, null, 2);
+        }
     </script>
-  </body>
+</body>
 </html>
