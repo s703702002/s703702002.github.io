@@ -2,46 +2,112 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; padding: 10px; }
+        button { padding: 10px; font-size: 16px; margin-bottom: 10px; cursor: pointer; }
+        input { padding: 10px; font-size: 16px; margin-bottom: 10px; width: 80%; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; border: 1px solid #ccc; }
+        .section { margin-bottom: 20px; border-bottom: 2px dashed #aaa; padding-bottom: 20px; }
+    </style>
 </head>
 <body>
-    <h1>Bridge 探測器</h1>
-    <button onclick="detectBridges()" style="padding: 15px; font-size: 16px;">點我開始掃描</button>
-    <pre id="result"></pre>
+    <div class="section">
+        <h2>1. 掃描環境</h2>
+        <button onclick="detectBridges()">開始全域掃描</button>
+        <pre id="scanResult">掃描結果會顯示在這裡...</pre>
+    </div>
+
+    <div class="section">
+        <h2>2. 深度調查 (輸入掃到的名稱)</h2>
+        <input type="text" id="targetName" placeholder="例如: webkit, LineIt, liff...">
+        <br>
+        <button onclick="investigateTarget()">調查原始碼與內容</button>
+        <button onclick="tryExecute()">嘗試呼叫 (危險測試)</button>
+        <pre id="investigateResult">調查結果會顯示在這裡...</pre>
+    </div>
 
     <script>
+        // --- 1. 掃描功能 ---
         function detectBridges() {
-            let output = {};
+            let output = { iOS_Bridges: [], possible_Globals: [] };
 
-            // 1. 探測 iOS (WKWebView)
+            // iOS WKWebView
             if (window.webkit && window.webkit.messageHandlers) {
                 output.iOS_Bridges = Object.keys(window.webkit.messageHandlers);
-            } else {
-                output.iOS_Bridges = "未偵測到 webkit 物件";
             }
 
-            // 2. 探測可能的 Android 或自訂全域變數
-            // 尋找 window 底下，不是標準瀏覽器 API 的自訂物件
-            let customGlobals = [];
+            // 掃描 Window 全域
+            let ignoreList = ['webkit', 'document', 'location', 'window', 'detectBridges', 'investigateTarget', 'tryExecute'];
+            
             for (let prop in window) {
                 try {
-                    // 過濾掉常見的網頁標準屬性，只留下看起來像 APP 注入的變數
-                    if (prop !== 'webkit' && prop !== 'document' && prop !== 'location' && 
-                        prop !== 'window' && prop.length > 2) {
-                        
-                        // 很多 APP 注入的物件在 typeof 判斷時會是 object 或 function
-                        if (typeof window[prop] === 'object' || typeof window[prop] === 'function') {
-                            // 這裡只簡單列出名稱，避免遞迴層級太深當機
-                            customGlobals.push(prop); 
+                    if (prop.length > 2 && !ignoreList.includes(prop)) {
+                        let type = typeof window[prop];
+                        if (type === 'object' || type === 'function') {
+                            output.possible_Globals.push(`${prop} (${type})`); 
                         }
                     }
-                } catch (e) {
-                    // 跨域或安全限制導致無法讀取的屬性就跳過
-                }
+                } catch (e) {}
             }
-            output.possible_Globals = customGlobals;
 
-            // 顯示結果
-            document.getElementById('result').innerHTML = JSON.stringify(output, null, 2);
+            document.getElementById('scanResult').textContent = JSON.stringify(output, null, 2);
+        }
+
+        // --- 2. 調查功能 (看內容/原始碼) ---
+        function investigateTarget() {
+            let name = document.getElementById('targetName').value.trim();
+            let resultBox = document.getElementById('investigateResult');
+            
+            if (!name || !(name in window)) {
+                resultBox.textContent = `找不到 window.${name}，請確認名稱是否正確。`;
+                return;
+            }
+
+            let target = window[name];
+            let type = typeof target;
+            let output = `[型態]: ${type}\n\n`;
+
+            try {
+                if (type === 'function') {
+                    // 如果是 function，利用 toString() 把原始碼印出來
+                    // 如果是原生 APP 注入的，這裡通常會顯示 [native code]
+                    output += `[原始碼]:\n${target.toString()}`;
+                } else if (type === 'object') {
+                    // 如果是 object，嘗試印出它底下的所有屬性和函式
+                    output += `[物件內容與屬性]:\n`;
+                    let props = [];
+                    for (let key in target) {
+                        props.push(`${key}: ${typeof target[key]}`);
+                    }
+                    output += props.join('\n');
+                } else {
+                    output += `[值]: ${target}`;
+                }
+            } catch (e) {
+                output += `解析失敗: ${e.message}`;
+            }
+
+            resultBox.textContent = output;
+        }
+
+        // --- 3. 執行功能 (嘗試觸發) ---
+        function tryExecute() {
+            let name = document.getElementById('targetName').value.trim();
+            let resultBox = document.getElementById('investigateResult');
+            
+            if (!name || typeof window[name] !== 'function') {
+                resultBox.textContent = `${name} 不存在或者不是一個 Function，無法執行！`;
+                return;
+            }
+
+            try {
+                resultBox.textContent = `嘗試執行 window.${name}() ...\n`;
+                // 嘗試不帶參數呼叫
+                let res = window[name](); 
+                resultBox.textContent += `執行成功！回傳值: \n${JSON.stringify(res, null, 2) || res}`;
+            } catch (e) {
+                resultBox.textContent += `執行發生錯誤 (可能需要特定參數或環境):\n${e.message}`;
+            }
         }
     </script>
 </body>
