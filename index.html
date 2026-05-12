@@ -47,15 +47,15 @@
     <a id="appLink" href="https://app.gogoro.com" class="btn">開啟 Gogoro App</a>
 
     <script type="text/javascript">
-      // 嘗試自動跳轉
-      window.onload = function() {
-        var targetUrl = "https://app.gogoro.com";
-        
-        // 為了避免使用者按上一頁又馬上被轉走，可以做一點延遲或判斷
-        setTimeout(function() {
-             // 使用 replace 比較好，這樣按上一頁不會卡在死胡同
-             window.location.replace(targetUrl);
-        }, 500);
+     window.onload = function() {
+          let bridgeNames = [];
+          if (window.webkit && window.webkit.messageHandlers) {
+              // 抓出所有注入的 handler 名稱
+              bridgeNames = Object.keys(window.webkit.messageHandlers);
+          }
+
+          // 將結果顯示在網頁上
+          document.body.innerHTML = "<h1>找到的 Bridge:</h1><pre>" + JSON.stringify(bridgeNames, null, 2) + "</pre>";
       };
     </script>
   </body>
